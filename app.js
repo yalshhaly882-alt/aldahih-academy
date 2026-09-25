@@ -129,17 +129,18 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   submitBtn.textContent = "⏳ جاري الدخول...";
 
   try {
-    try {
-      await addDoc(studentsRef, {
-        name,
-        trackKey: state.trackKey,
-        trackName: state.content.groups[state.trackKey].name,
-        registeredAt: serverTimestamp(),
-      });
-    } catch (regErr) {
-      // حتى لو التسجيل فشل (مثلاً مشكلة نت)، سيب الطالب يكمل عادي
+    const regPromise = addDoc(studentsRef, {
+      name,
+      trackKey: state.trackKey,
+      trackName: state.content.groups[state.trackKey].name,
+      registeredAt: serverTimestamp(),
+    }).catch((regErr) => {
+      // حتى لو التسجيل فشل أو الشبكة بطيئة، سيب الطالب يكمل عادي
       console.error("student registration failed", regErr);
-    }
+    });
+
+    // متستناش أكتر من 4 ثواني على التسجيل — كمّل الطالب على أي حال
+    await Promise.race([regPromise, new Promise((resolve) => setTimeout(resolve, 4000))]);
 
     renderSubjects();
     showScreen("subjects");
