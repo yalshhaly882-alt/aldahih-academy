@@ -117,27 +117,39 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     toast("اختار شعبتك الأول");
     return;
   }
+  if (!state.content || !state.content.groups || !state.content.groups[state.trackKey]) {
+    toast("⚠️ حصلت مشكلة في تحميل بيانات الشعبة، جرب تقفل الصفحة وتفتحها تاني");
+    return;
+  }
 
   state.studentName = name;
 
   const submitBtn = document.getElementById("login-submit-btn");
   submitBtn.disabled = true;
+  submitBtn.textContent = "⏳ جاري الدخول...";
 
   try {
-    await addDoc(studentsRef, {
-      name,
-      trackKey: state.trackKey,
-      trackName: state.content.groups[state.trackKey].name,
-      registeredAt: serverTimestamp(),
-    });
-  } catch (err) {
-    // حتى لو التسجيل فشل (مثلاً مشكلة نت)، سيب الطالب يكمل عادي
-    console.error("student registration failed", err);
-  }
+    try {
+      await addDoc(studentsRef, {
+        name,
+        trackKey: state.trackKey,
+        trackName: state.content.groups[state.trackKey].name,
+        registeredAt: serverTimestamp(),
+      });
+    } catch (regErr) {
+      // حتى لو التسجيل فشل (مثلاً مشكلة نت)، سيب الطالب يكمل عادي
+      console.error("student registration failed", regErr);
+    }
 
-  submitBtn.disabled = false;
-  renderSubjects();
-  showScreen("subjects");
+    renderSubjects();
+    showScreen("subjects");
+  } catch (err) {
+    console.error("login flow failed", err);
+    toast("⚠️ حصل خطأ: " + (err && err.message ? err.message : "غير معروف"));
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "📝 دخول المنصة";
+  }
 });
 
 document.getElementById("back-to-login").addEventListener("click", () => showScreen("login"));
