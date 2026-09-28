@@ -309,6 +309,54 @@ select option {
 }
 .toast.show { opacity: 1; }
 
+/* تتبع التقدّم */
+.lesson-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.lesson-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background .15s;
+}
+.lesson-check input { display: none; }
+.lesson-check .check-mark {
+  font-size: 15px;
+  font-weight: 700;
+  color: transparent;
+  transition: color .15s;
+}
+.lesson-check:has(input:checked) {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+.lesson-check:has(input:checked) .check-mark { color: var(--bg); }
+
+.list-item.done { opacity: 0.55; }
+.list-item.done .name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted);
+}
+
+.progress-badge {
+  font-size: 12px;
+  color: var(--accent-2);
+  background: rgba(47,184,166,0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+
 .subject-tag {
   display: inline-block;
   background: rgba(47,184,166,0.12);

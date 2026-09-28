@@ -20,6 +20,33 @@ const state = {
   subjectCode: null,
 };
 
+// ---------- تتبع تقدّم الطالب (محفوظ محلياً) ----------
+const PROGRESS_KEY = "aldahih_progress";
+
+function getProgress() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(PROGRESS_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function lessonKey(name) {
+  return `${state.trackKey}:${state.subjectCode}:${name}`;
+}
+
+function isLessonDone(name) {
+  return getProgress().has(lessonKey(name));
+}
+
+function toggleLesson(name) {
+  const progress = getProgress();
+  const key = lessonKey(name);
+  if (progress.has(key)) progress.delete(key);
+  else progress.add(key);
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify([...progress]));
+}
+
 function showScreen(name) {
   Object.values(screens).forEach((el) => (el.style.display = "none"));
   screens[name].style.display = "block";
@@ -67,9 +94,14 @@ function renderSubjects() {
   }
 
   group.subjects.forEach((code) => {
+    const teachers = content.teachers[code] || [];
+    const doneCount = teachers.filter((t) => isLessonDone(t.name)).length;
+    const total = teachers.length;
+    const progressBadge = total > 0 ? `<span class="progress-badge">${doneCount}/${total}</span>` : "";
+
     const item = document.createElement("div");
     item.className = "list-item";
-    item.innerHTML = `<span class="name">${content.subjectNames[code] || code}</span><span class="go">عرض المدرسين ←</span>`;
+    item.innerHTML = `<span class="name">${content.subjectNames[code] || code}</span><span class="go">${progressBadge}عرض المدرسين ←</span>`;
     item.addEventListener("click", () => {
       state.subjectCode = code;
       renderTeachers();
@@ -94,9 +126,24 @@ function renderTeachers() {
   }
 
   teachers.forEach((t) => {
+    const done = isLessonDone(t.name);
     const item = document.createElement("div");
-    item.className = "list-item";
-    item.innerHTML = `<span class="name">📺 ${t.name}</span><span class="go">فتح المحاضرات على تليجرام ←</span>`;
+    item.className = "list-item" + (done ? " done" : "");
+    item.innerHTML = `
+      <span class="name">📺 ${t.name}</span>
+      <div class="lesson-actions">
+        <label class="lesson-check" title="خلصت المحاضرات؟">
+          <input type="checkbox" ${done ? "checked" : ""} />
+          <span class="check-mark">✓</span>
+        </label>
+        <span class="go">فتح المحاضرات على تليجرام ←</span>
+      </div>`;
+    item.querySelector('input[type="checkbox"]').addEventListener("click", (e) => e.stopPropagation());
+    item.querySelector('input[type="checkbox"]').addEventListener("change", function () {
+      toggleLesson(t.name);
+      item.classList.toggle("done", this.checked);
+      renderSubjects();
+    });
     item.addEventListener("click", () => {
       window.open(t.link, "_blank", "noopener");
     });
